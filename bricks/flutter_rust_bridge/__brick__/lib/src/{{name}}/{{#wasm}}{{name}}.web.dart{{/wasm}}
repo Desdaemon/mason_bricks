@@ -1,0 +1,7 @@
+import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
+import '{{bridge}}.web.dart';
+export '{{bridge_def}}.dart';
+
+final api = {{name.pascalCase()}}Impl.wasm(WasmModule.initialize(
+  kind: const Modules.noModules(root: 'pkg/{{name}}'),
+));

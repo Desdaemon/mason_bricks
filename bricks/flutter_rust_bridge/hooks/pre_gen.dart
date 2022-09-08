@@ -1,38 +1,33 @@
-import 'dart:convert';
-import 'dart:math';
-
+import 'package:path/path.dart' as p;
 import 'package:mason/mason.dart';
 import 'dart:io';
-import 'package:crclib/crclib.dart';
-import 'package:crclib/catalog.dart';
-import 'package:mustache_template/mustache.dart' show LambdaFunction;
 
-/** Partially reproduced from https://gitlab.com/kornelski/cargo-xcode */
-class Generator {
-  final ParametricCrc crc;
-  final int base;
-
-  const Generator({required this.crc, required this.base});
-
-  factory Generator.from(String id) {
-    final crc = Crc64Ecma182();
-    final base = crc.convert(utf8.encode(id));
-    return Generator(crc: crc, base: (base as dynamic)._intValue);
+Stream<String> findCrates([String directory = '']) async* {
+  await for (final sub in Directory(directory).list()) {
+    if (await File(p.join(sub.path, 'Cargo.toml')).exists()) {
+      yield p.basename(sub.path);
+    }
   }
+}
 
-  String id(String kind, String name) {
-    final kind_ = crc.convert([this.base]..addAll(utf8.encode(kind)));
-    final name_ = crc.convert(utf8.encode(name));
-    final ret = 'CA60' + kind_.toString().padLeft(8, '0') + name_.toString().padLeft(12, '0');
-    return ret.substring(0, max(ret.length, 24));
-  }
+const tag = '@mason: flutter_rust_bridge';
+
+Future<bool> managed(String path, {bool replace = true}) async {
+  final file = File(path);
+  final fileExists = await file.exists();
+  final res = !fileExists || (await file.readAsString()).contains(tag);
+  if (res && fileExists) await file.delete();
+  return res;
 }
 
 void run(HookContext context) async {
   final v = context.vars;
-  final String name = v['name'];
+  final name = v['name'];
   final logger = context.logger;
-  if (await File('$name/Cargo.toml').exists() && !logger.confirm('Crate $name already exists, continue?')) {
+  if (v['wasm'] == true) {
+    v['bridge_def'] = logger.prompt("What is the definition file's name?", defaultValue: 'bridge_definitions');
+  }
+  if (await (File('$name/Cargo.toml').exists()) && !logger.confirm('Crate "$name" already exists, continue?')) {
     exit(0);
   }
 
@@ -46,33 +41,12 @@ void run(HookContext context) async {
     }
   }
 
-  final gen = Generator.from(v['name']);
-  final LambdaFunction id = (context) => gen.id(
-        context.lookup('kind')?.toString() ?? '',
-        context.renderString(),
-      );
-  final justfile = File('justfile');
+  final crates = await findCrates().toSet()
+    ..add(v['name']);
   v['previous_justfile'] = '';
-  v['justfile'] = true;
-  v['id'] = id;
-  final tasks = <String>[v['name']];
-  managed:
-  if (await justfile.exists()) {
-    final justfileContent = await justfile.readAsString();
-    const barrier = '# end-header';
-    final idx = justfileContent.indexOf(barrier);
-    if (idx != -1) {
-      const len = barrier.length;
-      v['previous_justfile'] = justfileContent.substring(idx + len);
-    }
-    if (!justfileContent.contains('@mason: flutter_rust_bridge')) {
-      v['justfile'] = false;
-      break managed;
-    }
-
-    final recipePattern = RegExp(r'gen_(.+):');
-    tasks.addAll(recipePattern.allMatches(justfileContent).map((e) => e.group(1)!));
-    logger.alert('Detected justfile previously created by this brick. It is recommended to overwrite justfile.');
-  }
-  v['tasks'] = tasks;
+  v['justfile'] = await managed('justfile');
+  v['cmake_linux'] = await managed('linux/rust.cmake');
+  v['cmake_windows'] = await managed('windows/rust.cmake');
+  v['crates'] = crates.toList();
+  v['tag'] = tag;
 }

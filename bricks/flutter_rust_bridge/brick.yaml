@@ -25,9 +25,25 @@ vars:
     type: string
     description: A valid Rust crate name
     default: native
-    prompt: What is your native package's name?
+    prompt: What is your Rust crate's name?
   bridge:
     type: string
     description: A valid Rust/Dart name of the bridge module
     default: bridge_generated
     prompt: What is the bridging module's base name?
+  crate_type:
+    type: array
+    description: A list of Rust crate-types to target
+    defaults: [lib, staticlib, cdylib]
+    values: [lib, staticlib, cdylib]
+    prompt: What is the crate's crate-type(s)?
+  wasm:
+    type: boolean
+    description: Whether to generate WASM-specific files
+    default: true
+    prompt: Enable WASM for this crate?
+  dart_line_length:
+    type: number
+    description: The target line length for Dart file formatters
+    default: 80
+    prompt: What should the Dart line length for this crate be?

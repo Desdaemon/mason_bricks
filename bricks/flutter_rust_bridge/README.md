@@ -15,7 +15,9 @@ on how to hook the crates' build process to `flutter run`.
 
 ## Notes
 
-- If you use [just](https://github.com/casey/just), consider letting this brick manage justfile automatically; it will append new crates on repeated invocations.
+- If you use [just](https://github.com/casey/just), consider letting this brick manage
+  justfile automatically; it will append new crates on repeated invocations.
+  If justfile already exists, this brick will not generate one.
 
 ## Outputs
 
@@ -24,34 +26,28 @@ on how to hook the crates' build process to `flutter run`.
 justfile
 lib
 └── src
+    ├── native.dart
     └── native
         ├── native.dart
-        └── bridge_generated.dart
-ios
-└── Runner
-    └── bridge_generated.native.h
+        └── native.web.dart
 linux # if linux support is present
 └── rust.cmake
 windows # if Windows support is present
 └── rust.cmake
-macos # if MacOS support is present
-└── Runner
-    └── bridge_generated.native.h
 native
+├── build.rs
 ├── native.xcodeproj # post-init hook, requires Cargo
 ├── Cargo.toml
 └── src
     ├── lib.rs
-    ├── api.rs
-    └── bridge_generated.rs
+    └── api.rs
 ```
 
 ```makefile
 # file: justfile
 # @mason: flutter_rust_bridge
 
-default: gen lint
-gen: gen_native ..
+default: check lint
 lint: lint_native ..
     dart fmt .
 clean: clean_native ..
@@ -60,8 +56,6 @@ check: check_native ..
     flutter analyze
 
 # Crates section
-gen_native:
-    flutter_rust_bridge_codegen ..
 lint_native:
     cd native && cargo fmt
 clean_native:

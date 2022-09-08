@@ -15,8 +15,6 @@ const _base = '{{name}}';
 // but rather directly **linked** against the binary.
 final _dylib = io.Platform.isWindows ? '$_base.dll' : 'lib$_base.so';
 
-// The late modifier delays initializing the value until it is actually needed,
-// leaving precious little time for the program to quickly start up.
-late final {{name.pascalCase()}} api = {{name.pascalCase()}}Impl(io.Platform.isIOS || io.Platform.isMacOS
+final api = {{name.pascalCase()}}Impl(io.Platform.isIOS || io.Platform.isMacOS
     ? DynamicLibrary.executable()
     : DynamicLibrary.open(_dylib));

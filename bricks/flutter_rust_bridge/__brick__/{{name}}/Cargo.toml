@@ -5,7 +5,10 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
-crate-type = ["lib", "cdylib", "staticlib"]
+crate-type = [{{#crate_type}}"{{.}}",{{/crate_type}}]
 
 [dependencies]
-flutter_rust_bridge = "*"
+flutter_rust_bridge = "1"
+
+[build-dependencies]
+flutter_rust_bridge_codegen = "1"

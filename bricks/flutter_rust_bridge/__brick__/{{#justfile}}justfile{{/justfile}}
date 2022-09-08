@@ -1,0 +1,29 @@
+# {{tag}}
+
+# When 'just' is called with no arguments,
+# these recipes are run by default.
+
+default: check lint
+
+# Add new recipes to these meta-recipes as you add new modules.
+
+lint:{{#crates}} lint_{{..snakeCase()}}{{/crates}}
+clean:{{#crates}} clean_{{..snakeCase()}}{{/crates}}
+    flutter clean
+check:{{#crates}} check_{{..snakeCase()}}{{/crates}}
+    flutter analyze
+
+alias c := check
+alias l := lint
+
+{{#crates}}
+# Recipes for {{name}}
+
+lint_{{..snakeCase()}}:
+    cd {{.}} && cargo fmt
+    cd {{.}} && dart format --line-length {{dart_line_length}}
+clean_{{..snakeCase()}}:
+    cd {{.}} && cargo clean
+check_{{..snakeCase()}}:
+    cd {{.}} && cargo check
+{{/crates}}
