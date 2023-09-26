@@ -18,7 +18,7 @@ bool success(ProcessResult proc, [Function(String)? onError]) {
 
 Future<bool> fileContains(String path, String needle) async {
   final file = File(path);
-  return await file.exists() && (await file.readAsString()).contains(needle);
+  return !(await file.exists()) || (await file.readAsString()).contains(needle);
 }
 
 Future<bool> which(String command) async {
@@ -79,8 +79,7 @@ void run(HookContext context) async {
 = Please install `rustup` and recreate this brick to generate the necessary files.
 """);
   }
-  final androidManifest = File('android/app/build.gradle');
-  if (await androidManifest.exists() && (await androidManifest.readAsString()).contains('cargo-ndk')) {
+  if (!await fileContains('android/app/build.gradle', 'cargo-ndk')) {
     logger.warn('Manual setup for Android is required.');
     logger.info('= Please check out http://cjycode.com/flutter_rust_bridge/integrate/android.html for more details.');
     print('');
